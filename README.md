@@ -1,15 +1,26 @@
-# TeamClaude
+# Claude LB
 
-[![CI](https://github.com/KarpelesLab/teamclaude/actions/workflows/ci.yml/badge.svg)](https://github.com/KarpelesLab/teamclaude/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@karpeleslab/teamclaude.svg)](https://www.npmjs.com/package/@karpeleslab/teamclaude)
-[![node](https://img.shields.io/node/v/@karpeleslab/teamclaude.svg)](https://nodejs.org)
+[![CI](https://github.com/liubozh/claude-lb/actions/workflows/ci.yml/badge.svg)](https://github.com/liubozh/claude-lb/actions/workflows/ci.yml)
+[![node >= 20](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Multi-account Claude proxy with automatic quota-based rotation for [Claude Code](https://claude.ai/claude-code).
+> [!IMPORTANT]
+> Claude LB is an unofficial derivative of
+> [KarpelesLab/teamclaude](https://github.com/KarpelesLab/teamclaude). It is not
+> affiliated with or endorsed by KarpelesLab or Anthropic. The original project
+> and npm package remain the canonical TeamClaude distribution.
+
+A quota-aware, multi-account gateway and load balancer for
+[Claude Code](https://claude.ai/claude-code) and HTTP clients.
 
 Sits transparently between Claude Code and the Anthropic API, managing multiple Claude Max (or API key) accounts and automatically switching when one approaches its session or weekly quota limit.
 
-![TeamClaude TUI](screenshots/teamclaude.png)
+This repository preserves the upstream routing, quota tracking, and account
+management behavior while evolving toward a standalone HTTP gateway, including
+future OpenAI-compatible protocol support. The CLI remains `teamclaude` for
+upstream compatibility.
+
+![Claude LB TUI](screenshots/teamclaude.png)
 
 ## Features
 
@@ -42,8 +53,11 @@ Sits transparently between Claude Code and the Anthropic API, managing multiple 
 Requires Node.js 20+.
 
 ```bash
-# Install
-npm install -g @karpeleslab/teamclaude
+# Install this derivative from source
+git clone https://github.com/liubozh/claude-lb.git
+cd claude-lb
+npm install
+npm link
 
 # Add your first account (opens browser for OAuth)
 teamclaude login
@@ -205,22 +219,16 @@ teamclaude route list        # Manage per-model routes (add/rm); see Model route
 teamclaude probe 300         # Enable background quota refresh (off by default)
 teamclaude alias             # Print/install a `claude` alias that routes via the proxy
 teamclaude api <path>        # Call an API endpoint with account credentials
-teamclaude update            # Check npm for a newer teamclaude and install it
+teamclaude update            # Show update guidance for the current installation
 teamclaude version           # Print the installed version
 teamclaude help              # Show all commands
 ```
 
-### Auto-update
+### Updating
 
-When teamclaude is installed globally via npm, it self-updates in the
-background: it checks the npm registry at most once a day, and when a newer
-version is published it runs `npm install -g @karpeleslab/teamclaude@latest` and
-applies it on the next launch. The check runs after a `teamclaude run` session
-ends and when a headless server starts; a git checkout is never touched (update
-it with `git pull`). Run `teamclaude update` to update on demand.
-
-Disable auto-update with `TEAMCLAUDE_DISABLE_AUTOUPDATE=1` or `"autoUpdate": false`
-in the config.
+Claude LB is currently distributed from source rather than npm. Update a clone
+from this repository with `git pull --ff-only origin master`. Git checkouts are
+never modified by the inherited npm auto-updater.
 
 When the same email belongs to multiple organizations, accounts are named
 `email (Org)` to keep them distinct. Pass `--org <name|uuid>` to disambiguate a
@@ -542,18 +550,19 @@ TLS is established **end-to-end with `api.anthropic.com` over the tunnel**, so t
 
 ## Security
 
-The only canonical sources for TeamClaude are this repository
-(https://github.com/KarpelesLab/teamclaude) and the
-[`@karpeleslab/teamclaude`](https://www.npmjs.com/package/@karpeleslab/teamclaude)
-npm package. TeamClaude is **never** distributed as a downloadable binary
-archive — be wary of soft-forks that bundle a `.zip` and tell you to extract and
-run it. See [SECURITY.md](SECURITY.md) for details and how to report issues.
+The canonical source for Claude LB is
+[`liubozh/claude-lb`](https://github.com/liubozh/claude-lb). It is not published
+to npm and is not distributed as a downloadable binary archive. The canonical
+upstream TeamClaude sources remain
+[`KarpelesLab/teamclaude`](https://github.com/KarpelesLab/teamclaude) and
+[`@karpeleslab/teamclaude`](https://www.npmjs.com/package/@karpeleslab/teamclaude).
+See [SECURITY.md](SECURITY.md) for reporting guidance.
 
 ## Compliance & Terms of Service
 
 > This is the maintainer's good-faith understanding, **not legal advice.** Anthropic's Terms are theirs to interpret and to change; read the current [Claude Code legal terms](https://code.claude.com/docs/en/legal-and-compliance) and decide for yourself.
 
-TeamClaude is a **self-hosted local proxy**. You run it on your own machine, it holds *your own* credentials, and it forwards the requests that *your own* Claude Code CLI makes to Anthropic. It is **not** a hosted service, it does not offer "Claude.ai login" to anyone, and it never routes requests on behalf of third parties — it only moves your own traffic through accounts you control.
+Claude LB is a **self-hosted local proxy**. You run it on your own machine, it holds *your own* credentials, and it forwards the requests that *your own* Claude Code CLI makes to Anthropic. It is **not** a hosted service, it does not offer "Claude.ai login" to anyone, and it never routes requests on behalf of third parties — it only moves your own traffic through accounts you control.
 
 How you use it is your responsibility. In particular:
 
@@ -561,19 +570,9 @@ How you use it is your responsibility. In particular:
 - **Keep a human in the loop.** The terms expect interactive, human-present use rather than fully unattended automation. The two features that make background calls on their own — [keep-warm](#keep-warm-start-idle-accounts-5h-timers-optional-off-by-default) and the [quota probe](#quota-probe-optional-off-by-default) — are **off by default**.
 - **Only use subscriptions you legitimately purchased.**
 
-On **rotating across multiple subscriptions** — the question people ask most — note that Claude Code's own `/extra-usage` flow already offers signing into a *different* account when you hit a limit. "Switch to another account you own to get more usage" is a move the native client itself surfaces; TeamClaude automates that same switch. Anthropic hasn't explicitly blessed *automated* pooling, so weigh it against the current terms — but the idea that using more than one of your own subscriptions is inherently off-limits is hard to square with the first-party client offering to do the same thing by hand.
+On **rotating across multiple subscriptions** — the question people ask most — note that Claude Code's own `/extra-usage` flow already offers signing into a *different* account when you hit a limit. "Switch to another account you own to get more usage" is a move the native client itself surfaces; Claude LB automates that same switch. Anthropic hasn't explicitly blessed *automated* pooling, so weigh it against the current terms — but the idea that using more than one of your own subscriptions is inherently off-limits is hard to square with the first-party client offering to do the same thing by hand.
 
-To the best of the maintainer's knowledge, using TeamClaude as intended — the real Claude Code CLI, your own subscriptions, a human present — is consistent with Claude Code's Terms. See [#107](https://github.com/KarpelesLab/teamclaude/issues/107) for the full write-up.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=KarpelesLab%2Fteamclaude&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=KarpelesLab/teamclaude&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=KarpelesLab/teamclaude&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=KarpelesLab/teamclaude&type=date&legend=top-left" />
- </picture>
-</a>
+To the best of the upstream maintainer's knowledge, using this behavior as intended — the real Claude Code CLI, your own subscriptions, a human present — is consistent with Claude Code's Terms. See the upstream [discussion #107](https://github.com/KarpelesLab/teamclaude/issues/107) for the full write-up.
 
 ## License
 

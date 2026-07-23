@@ -1,7 +1,8 @@
 {
-  "name": "@karpeleslab/teamclaude",
+  "name": "claude-lb",
   "version": "1.1.8",
-  "description": "Multi-account Claude proxy with automatic quota-based rotation",
+  "private": true,
+  "description": "Quota-aware multi-account gateway and load balancer for Claude",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -20,17 +21,18 @@
     "anthropic",
     "proxy",
     "load-balancer",
-    "multi-account"
+    "multi-account",
+    "llm-gateway"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KarpelesLab/teamclaude.git"
+    "url": "git+https://github.com/liubozh/claude-lb.git"
   },
   "bugs": {
-    "url": "https://github.com/KarpelesLab/teamclaude/issues"
+    "url": "https://github.com/liubozh/claude-lb/issues"
   },
-  "homepage": "https://github.com/KarpelesLab/teamclaude#readme",
+  "homepage": "https://github.com/liubozh/claude-lb#readme",
   "engines": {
     "node": ">=20.0.0"
   },

@@ -1,0 +1,60 @@
+name: Sync upstream
+
+on:
+  schedule:
+    # 10:00 Asia/Hong_Kong (02:00 UTC) every day.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-upstream-master
+  cancel-in-progress: false
+
+jobs:
+  open-sync-pr:
+    name: open sync PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream master
+        run: |
+          git remote add upstream https://github.com/KarpelesLab/teamclaude.git
+          git fetch --no-tags upstream master
+
+      - name: Open an upstream synchronization PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git merge-base --is-ancestor upstream/master origin/master; then
+            echo "origin/master already contains upstream/master"
+            exit 0
+          fi
+
+          open_pr="$(gh pr list \
+            --base master \
+            --state open \
+            --json number,headRefName \
+            --jq '[.[] | select(.headRefName | startswith("sync/upstream-"))][0].number // empty')"
+          if [ -n "$open_pr" ]; then
+            echo "Upstream synchronization PR #$open_pr is already open"
+            exit 0
+          fi
+
+          upstream_sha="$(git rev-parse upstream/master)"
+          short_sha="$(git rev-parse --short=12 upstream/master)"
+          branch="sync/upstream-$short_sha"
+
+          git push origin "upstream/master:refs/heads/$branch"
+
+          gh pr create \
+            --base master \
+            --head "$branch" \
+            --title "chore: sync upstream master ($short_sha)" \
+            --body "Sync KarpelesLab/teamclaude@\`$upstream_sha\` into Claude LB.\n\nReview upstream code and workflow changes carefully. Merge this PR with a merge commit; do not squash or rebase it."

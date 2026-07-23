@@ -1,46 +1,39 @@
 # Security Policy
 
+## Project identity
+
+Claude LB is an unofficial derivative of
+[KarpelesLab/teamclaude](https://github.com/KarpelesLab/teamclaude). It is not
+affiliated with or endorsed by KarpelesLab or Anthropic.
+
+- **Claude LB source:** https://github.com/liubozh/claude-lb
+- **Official TeamClaude source:** https://github.com/KarpelesLab/teamclaude
+- **Official TeamClaude npm package:** `@karpeleslab/teamclaude`
+
+Claude LB is currently distributed from source only. It has no npm package and
+is not distributed as a downloadable binary archive.
+
 ## Reporting a vulnerability
 
-If you discover a security vulnerability in TeamClaude, please report it
-privately rather than opening a public issue.
+For a vulnerability introduced by Claude LB or affecting this derivative, use
+[private vulnerability reporting](https://github.com/liubozh/claude-lb/security/advisories/new).
+Do not disclose exploitable details in a public issue.
 
-- Use GitHub's [private vulnerability reporting](https://github.com/KarpelesLab/teamclaude/security/advisories/new)
-  ("Report a vulnerability" under the **Security** tab), or
-- Email the maintainers at the address listed on the
-  [KarpelesLab organization page](https://github.com/KarpelesLab).
-
-Please include enough detail to reproduce the issue (affected version, steps,
-and impact). We aim to acknowledge reports within a few days.
+For a vulnerability that also affects the original TeamClaude project, report
+it to the upstream maintainers through their
+[private vulnerability reporting](https://github.com/KarpelesLab/teamclaude/security/advisories/new)
+channel. Include the affected version, reproduction steps, and impact.
 
 ## Supported versions
 
-Only the latest published release on the `master` branch and the
-[`@karpeleslab/teamclaude`](https://www.npmjs.com/package/@karpeleslab/teamclaude)
-npm package receive security fixes.
+Only the current `master` branch is supported. There are no Claude LB release
+artifacts or published packages at this time.
 
-## Verifying you have the genuine project
+## Supply-chain guidance
 
-TeamClaude has been impersonated by malicious soft-forks that preserve the
-original commit history (and even the `@karpeleslab/teamclaude` package name)
-while bundling malware — typically a binary hidden in the repository and an
-install step that runs it.
-
-Only the following sources are canonical:
-
-- **Repository:** https://github.com/KarpelesLab/teamclaude
-- **npm package:** `@karpeleslab/teamclaude` (published by KarpelesLab)
-
-Treat any other copy with caution. In particular:
-
-- **Do not** download and run "TeamClaude" archives (`.zip`, etc.) linked from
-  third-party repositories or READMEs. TeamClaude is distributed via npm and the
-  canonical GitHub repository only — it is never shipped as a downloadable
-  binary archive.
-- Install with `npm install -g @karpeleslab/teamclaude` and verify the package
-  scope is `@karpeleslab`.
-- Be suspicious of any fork that instructs you to extract an archive and then
-  run `npm install` / `npm start` against its contents.
-
-If you believe you have found a malicious copy, please report it to GitHub and,
-if convenient, let us know via the channels above so we can warn other users.
+- Clone Claude LB only from the canonical repository above.
+- Review upstream synchronization pull requests before merging them.
+- Treat repositories or archives claiming to be official Claude LB builds with
+  caution.
+- Verify that npm installations using the `@karpeleslab` scope come from the
+  official TeamClaude project, not Claude LB.
