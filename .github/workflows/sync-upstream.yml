@@ -49,11 +49,9 @@ jobs:
             exit 1
           fi
 
-          open_pr="$(gh pr list \
-            --base master \
-            --state open \
-            --json number,headRefName \
-            --jq "[.[] | select(.headRefName | startswith(\"sync/upstream-\"))][0].number // empty")"
+          open_pr="$(gh api \
+            "repos/$GITHUB_REPOSITORY/pulls?state=open&base=master&per_page=100" \
+            --jq '[.[] | select(.head.ref | startswith("sync/upstream-"))][0].number // empty')"
           if [ -n "$open_pr" ]; then
             echo "Upstream synchronization PR #$open_pr is already open"
 
