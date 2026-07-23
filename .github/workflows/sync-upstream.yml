@@ -1,4 +1,5 @@
-name: Sync upstream
+# Opens a reviewable PR for upstream changes; never merges them automatically.
+name: Upstream sync PR
 
 on:
   schedule:
