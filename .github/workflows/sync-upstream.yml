@@ -32,30 +32,65 @@ jobs:
       - name: Open an upstream synchronization PR
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          if git merge-base --is-ancestor upstream/master origin/master; then
-            echo "origin/master already contains upstream/master"
+          synced_sha="$(tr -d '[:space:]' < .upstream-sha)"
+          upstream_sha="$(git rev-parse upstream/master)"
+
+          if [ "$synced_sha" = "$upstream_sha" ]; then
+            echo "Claude LB already tracks upstream commit $upstream_sha"
             exit 0
+          fi
+
+          if ! git merge-base --is-ancestor "$synced_sha" "$upstream_sha"; then
+            echo "Recorded upstream commit $synced_sha is not an ancestor of $upstream_sha"
+            echo "Refusing to sync rewritten upstream history automatically"
+            exit 1
           fi
 
           open_pr="$(gh pr list \
             --base master \
             --state open \
             --json number,headRefName \
-            --jq '[.[] | select(.headRefName | startswith("sync/upstream-"))][0].number // empty')"
+            --jq "[.[] | select(.headRefName | startswith(\"sync/upstream-\"))][0].number // empty")"
           if [ -n "$open_pr" ]; then
             echo "Upstream synchronization PR #$open_pr is already open"
             exit 0
           fi
 
-          upstream_sha="$(git rev-parse upstream/master)"
           short_sha="$(git rev-parse --short=12 upstream/master)"
           branch="sync/upstream-$short_sha"
+          patch_file="$RUNNER_TEMP/upstream-code.patch"
 
-          git push origin "upstream/master:refs/heads/$branch"
+          git switch --create "$branch" origin/master
+
+          git diff --binary "$synced_sha" "$upstream_sha" -- \
+            . \
+            ':(exclude).github/**' \
+            ':(exclude).upstream-sha' \
+            ':(exclude)LICENSE' \
+            ':(exclude)README.md' \
+            ':(exclude)SECURITY.md' > "$patch_file"
+
+          if [ -s "$patch_file" ]; then
+            git apply --3way --index "$patch_file"
+          else
+            echo "Upstream has no code changes outside repository-owned files"
+          fi
+
+          printf '%s\n' "$upstream_sha" > .upstream-sha
+          git add .upstream-sha
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync upstream master ($short_sha)"
+
+          git push --force-with-lease origin "$branch"
+
+          pr_body="$(printf 'Apply code changes from KarpelesLab/teamclaude between %s and %s.\n\nRepository-owned workflows, identity documents, and the license file are excluded. Review and test the imported code before merging.' "$synced_sha" "$upstream_sha")"
 
           gh pr create \
             --base master \
             --head "$branch" \
             --title "chore: sync upstream master ($short_sha)" \
-            --body "Sync KarpelesLab/teamclaude@\`$upstream_sha\` into Claude LB.\n\nReview upstream code and workflow changes carefully. Merge this PR with a merge commit; do not squash or rebase it."
+            --body "$pr_body"
